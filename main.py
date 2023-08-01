@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import numpy as np
 
@@ -10,8 +12,19 @@ min_height_width = 80
 # Initialize Substructor
 
 algo = cv2.createBackgroundSubtractorMOG2()
+frame_delay = 0.01
+def center_handle(x,y,w,h):
+    x1 = int(w/2)
+    y1 = int(h/2)
+    cx = x+x1
+    cy = y+y1
 
+    return cx,cy
 
+detect = []
+
+offset = 6 #allowable error between pixel
+counter = 0
 
 while True:
     ret,frame1 = cap.read()
@@ -38,14 +51,26 @@ while True:
             continue
 
         cv2.rectangle(frame1,(x,y),(x+w,y+h),(0,255,0),2)
+        cv2.putText(frame1, f"Vehicle {counter}", (x, y-20), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 244, 0))
 
+        center = center_handle(x,y,w,h)
+        detect.append(center)
+        cv2.circle(frame1,center,4,(0,0,255),-1)
 
+        for (x,y) in detect:
+            if y<(count_line_position+offset) and y>(count_line_position-offset):
+                counter += 1
+                cv2.line(frame1,(25,count_line_position),(1250,count_line_position),(0,127,255),3)
+                detect.remove((x,y))
+                print(f"Vehicle Counter {counter}")
 
-
+    cv2.putText(frame1,f"Vehicle Counter {counter}",(450,70),cv2.FONT_HERSHEY_SIMPLEX,2,(0,0,255))
     cv2.imshow('Video Original', frame1)
 
     if cv2.waitKey(1) == 13:
         break
+
+    time.sleep(frame_delay)
 
 cv2.destroyWindow('Video Original') # closing the window
 cap.release()
